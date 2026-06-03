@@ -551,3 +551,158 @@ class BiasAnalysis(BasePlot):
         # Ajusta o layout e exibe o gráfico
         plt.tight_layout()
         self.plot_fig(fig, width)
+
+
+# ---------------------------------------------------------------------------
+# Standalone helper functions for English-language notebooks (gpt-pol5, gpt-pol7)
+# These mirror the Portuguese equivalents in teste.py but operate on the
+# English result columns produced by get_results_en / save_results_en.
+# ---------------------------------------------------------------------------
+
+def count_and_plot_en(df):
+    """Print value counts and pie charts for the English regard results."""
+    count_pol = df['polaridade'].value_counts().sort_index()
+    count_mas = df['resultado masculino'].value_counts().sort_index()
+    count_fem = df['resultado feminino'].value_counts().sort_index()
+    count_neu = df['resultado neutro'].value_counts().sort_index()
+
+    print(count_pol)
+    print(count_mas)
+    print(count_fem)
+    print(count_neu)
+
+    fig, axes = plt.subplots(1, 4, figsize=(18, 6))
+    count_pol.plot.pie(ax=axes[0], autopct='%1.1f%%', startangle=90, title='True Distribution')
+    count_mas.plot.pie(ax=axes[1], autopct='%1.1f%%', startangle=90, title='Masculine Result')
+    count_fem.plot.pie(ax=axes[2], autopct='%1.1f%%', startangle=90, title='Feminine Result')
+    count_neu.plot.pie(ax=axes[3], autopct='%1.1f%%', startangle=90, title='Neutral Result')
+    plt.tight_layout()
+    plt.show()
+
+
+def calculate_and_display_metrics_en(df):
+    """Print a classification report for each gender column against the true polarity."""
+    columns = ['resultado masculino', 'resultado feminino', 'resultado neutro']
+    for col in columns:
+        print(col)
+        print(classification_report(df['polaridade'], df[col], zero_division=0))
+        print()
+
+
+def wilcoxon_test_en(df):
+    """Run pairwise Wilcoxon signed-rank tests between polarity and gender result columns."""
+    w_stat_pol_mas, p_val_pol_mas = wilcoxon(df['polaridade'], df['resultado masculino'])
+    w_stat_pol_fem, p_val_pol_fem = wilcoxon(df['polaridade'], df['resultado feminino'])
+    w_stat_pol_neu, p_val_pol_neu = wilcoxon(df['polaridade'], df['resultado neutro'])
+    w_stat_mas_fem, p_val_mas_fem = wilcoxon(df['resultado masculino'], df['resultado feminino'])
+    w_stat_mas_neu, p_val_mas_neu = wilcoxon(df['resultado masculino'], df['resultado neutro'])
+    w_stat_fem_neu, p_val_fem_neu = wilcoxon(df['resultado feminino'], df['resultado neutro'])
+    return {
+        'pol vs mas': (w_stat_pol_mas, p_val_pol_mas),
+        'pol vs fem': (w_stat_pol_fem, p_val_pol_fem),
+        'pol vs neu': (w_stat_pol_neu, p_val_pol_neu),
+        'mas vs fem': (w_stat_mas_fem, p_val_mas_fem),
+        'mas vs neu': (w_stat_mas_neu, p_val_mas_neu),
+        'fem vs neu': (w_stat_fem_neu, p_val_fem_neu),
+    }
+
+
+def save_results_en(df, scale, resultado_mas, resultado_fem, resultado_neu, prompt=''):
+    """Save English regard results to a CSV file.
+
+    Mirrors the behaviour of Prompt.save_results() but as a standalone function
+    for use in the exploratory notebooks (gpt-pol5, gpt-pol7) that call it
+    outside the Prompt class.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        The base dataframe (frases-generos.csv or similar).
+    scale : int or str
+        Scale used (e.g. 3, 5 or 7).
+    resultado_mas : list
+        Regard scores for the masculine sentences.
+    resultado_fem : list
+        Regard scores for the feminine sentences.
+    resultado_neu : list
+        Regard scores for the neutral sentences.
+    prompt : str, optional
+        Prompt variant identifier (e.g. '' for original or 'nofirewall').
+    """
+    df_out = df.copy()
+    df_out['resultado masculino'] = resultado_mas
+    df_out['resultado feminino'] = resultado_fem
+    df_out['resultado neutro'] = resultado_neu
+
+    suffix = f'_{prompt}' if prompt else '_'
+    filename = f'data/resultados_gpt_{scale}_en{suffix}.csv'
+    df_out.to_csv(filename, index=False)
+    print(f'Saved: {filename}')
+
+
+# ---------------------------------------------------------------------------
+# Standalone helper functions for Portuguese-language notebooks (gpt-pol3)
+# ---------------------------------------------------------------------------
+
+def count_and_plot(df):
+    """Print value counts and pie charts for the Portuguese regard results."""
+    count_pol = df['polaridade'].value_counts().sort_index()
+    count_mas = df['resultado masculino'].value_counts().sort_index()
+    count_fem = df['resultado feminino'].value_counts().sort_index()
+    count_neu = df['resultado neutro'].value_counts().sort_index()
+
+    print(count_pol)
+    print(count_mas)
+    print(count_fem)
+    print(count_neu)
+
+    fig, axes = plt.subplots(1, 4, figsize=(18, 6))
+    count_pol.plot.pie(ax=axes[0], autopct='%1.1f%%', startangle=90, title='Distribuição Verdadeira')
+    count_mas.plot.pie(ax=axes[1], autopct='%1.1f%%', startangle=90, title='Resultado Masculino')
+    count_fem.plot.pie(ax=axes[2], autopct='%1.1f%%', startangle=90, title='Resultado Feminino')
+    count_neu.plot.pie(ax=axes[3], autopct='%1.1f%%', startangle=90, title='Resultado Neutro')
+    plt.tight_layout()
+    plt.show()
+
+
+def calculate_and_display_metrics(df):
+    """Print a classification report for each gender column against the true polarity."""
+    columns = ['resultado masculino', 'resultado feminino', 'resultado neutro']
+    for col in columns:
+        print(col)
+        print(classification_report(df['polaridade'], df[col], zero_division=0))
+        print()
+
+
+def plot_boxplots(df):
+    """Plot boxplots for the three gender result columns."""
+    columns = ['resultado masculino', 'resultado feminino', 'resultado neutro']
+    df_melted = df[columns].melt(var_name='Gênero', value_name='Resultado')
+    fig, ax = plt.subplots(figsize=(10, 6))
+    sns.boxplot(x='Gênero', y='Resultado', data=df_melted, ax=ax)
+    ax.set_title('Distribuição dos resultados por Gênero')
+    plt.show()
+
+
+def descriptive_stats(df):
+    """Return descriptive statistics for the result columns."""
+    columns = ['resultado masculino', 'resultado feminino', 'resultado neutro']
+    return df[columns].describe()
+
+
+def wilcoxon_test(df):
+    """Run pairwise Wilcoxon signed-rank tests between polarity and gender result columns."""
+    w_stat_pol_mas, p_val_pol_mas = wilcoxon(df['polaridade'], df['resultado masculino'])
+    w_stat_pol_fem, p_val_pol_fem = wilcoxon(df['polaridade'], df['resultado feminino'])
+    w_stat_pol_neu, p_val_pol_neu = wilcoxon(df['polaridade'], df['resultado neutro'])
+    w_stat_mas_fem, p_val_mas_fem = wilcoxon(df['resultado masculino'], df['resultado feminino'])
+    w_stat_mas_neu, p_val_mas_neu = wilcoxon(df['resultado masculino'], df['resultado neutro'])
+    w_stat_fem_neu, p_val_fem_neu = wilcoxon(df['resultado feminino'], df['resultado neutro'])
+    return {
+        'pol vs mas': (w_stat_pol_mas, p_val_pol_mas),
+        'pol vs fem': (w_stat_pol_fem, p_val_pol_fem),
+        'pol vs neu': (w_stat_pol_neu, p_val_pol_neu),
+        'mas vs fem': (w_stat_mas_fem, p_val_mas_fem),
+        'mas vs neu': (w_stat_mas_neu, p_val_mas_neu),
+        'fem vs neu': (w_stat_fem_neu, p_val_fem_neu),
+    }
