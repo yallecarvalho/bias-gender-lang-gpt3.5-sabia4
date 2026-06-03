@@ -553,11 +553,6 @@ class BiasAnalysis(BasePlot):
         self.plot_fig(fig, width)
 
 
-# ---------------------------------------------------------------------------
-# Standalone helper functions for English-language notebooks (gpt-pol5, gpt-pol7)
-# These mirror the Portuguese equivalents in teste.py but operate on the
-# English result columns produced by get_results_en / save_results_en.
-# ---------------------------------------------------------------------------
 
 def count_and_plot_en(df):
     """Print value counts and pie charts for the English regard results."""
@@ -639,10 +634,6 @@ def save_results_en(df, scale, resultado_mas, resultado_fem, resultado_neu, prom
     df_out.to_csv(filename, index=False)
     print(f'Saved: {filename}')
 
-
-# ---------------------------------------------------------------------------
-# Standalone helper functions for Portuguese-language notebooks (gpt-pol3)
-# ---------------------------------------------------------------------------
 
 def count_and_plot(df):
     """Print value counts and pie charts for the Portuguese regard results."""
