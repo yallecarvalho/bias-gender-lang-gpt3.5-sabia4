@@ -697,3 +697,9 @@ def wilcoxon_test(df):
         'mas vs neu': (w_stat_mas_neu, p_val_mas_neu),
         'fem vs neu': (w_stat_fem_neu, p_val_fem_neu),
     }
+
+def map_polarity_values(df):
+    mapping_results = {1: 1, 2: 1, 3: 2, 4: 3, 5: 3}
+    for col in ['resultado masculino', 'resultado feminino', 'resultado neutro']:
+        df[col] = df[col].map(mapping_results)
+    return df
