@@ -6,7 +6,7 @@ from utils import *
 st.set_page_config(page_title="Bias Analysis in LLMs", layout="wide")
 
 # Carregar os dados
-data_path = 'data/results_gender2.csv' 
+data_path = '../data/resultados_finais.csv' 
 data_loader = DataLoader(data_path)
 df_result = data_loader.load_data()
 
@@ -25,7 +25,7 @@ st.markdown(
 with st.sidebar:
     option = option_menu(
         "Menu",
-        ["Home", "Data Overview", "Sentiment Analysis", 
+        ["Home", "Data Overview",
          "Gender Bias Analysis", "Firewall Analysis", "Language Analysis"],
         icons=["house", "table", "bar-chart-line", "gender-trans", "shield-lock", "translate"],
         menu_icon="cast",
@@ -57,23 +57,25 @@ elif option == "Data Overview":
     st.title("Data Overview")
     st.dataframe(df_result)
 
-    data_overview = DataOverview(data_loader)
+    # data_overview = DataOverview(data_loader)
 
-    # Polarity analysis
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        center_text('Boxplot', 'h6')
-        data_overview.boxplot_pol()
-    with col2:
-        center_text('Histogram', 'h6')
-        data_overview.histogram_pol()
-    with col3:
-        center_text('Pie Plot', 'h6')
-        data_overview.pieplot_pol()
+    # # Polarity analysis
+    # col1, col2, col3 = st.columns(3)
+    # with col1:
+    #     center_text('Boxplot', 'h6')
+    #     data_overview.boxplot_pol()
+    # with col2:
+    #     center_text('Histogram', 'h6')
+    #     data_overview.histogram_pol()
+    # with col3:
+    #     center_text('Pie Plot', 'h6')
+    #     data_overview.pieplot_pol()
 
     # Results
     st.header('Results')
-    scale = st.selectbox("Select Scale", ['1-3', '1-5', '1-7'])
+    scale = '1-5'
+    model = st.selectbox("Select Model", ['sabia-4', 'gpt-3.5-turbo'])
+
 
     plotter = Plotter(data_loader)
 
@@ -88,83 +90,83 @@ elif option == "Data Overview":
     col1, col2 = st.columns(2)
     with col1:
         center_text('Original', 'h4')
-        plotter.plot_boxplots(scale, 'en', 'original')
+        plotter.plot_boxplots(scale, model, 'en', 'original')
         center_text('No firewall', 'h4')
-        plotter.plot_boxplots(scale, 'en', 'nofirewall')
+        plotter.plot_boxplots(scale, model, 'en', 'nofirewall')
     with col2:
         center_text('Original', 'h4')
-        plotter.plot_boxplots(scale, 'pt', 'original')
+        plotter.plot_boxplots(scale, model, 'pt', 'original')
         center_text('No firewall', 'h4')
-        plotter.plot_boxplots(scale, 'pt', 'nofirewall')
+        plotter.plot_boxplots(scale, model, 'pt', 'nofirewall')
 
     # Histograms
     center_text('Histograms', 'h3')
     col1, col2 = st.columns(2)
     with col1:
         center_text('Original', 'h4')
-        plotter.plot_histograms(scale, 'en', 'original')
+        plotter.plot_histograms(scale, model, 'en', 'original')
         center_text('No firewall', 'h4')
-        plotter.plot_histograms(scale, 'en', 'nofirewall')
+        plotter.plot_histograms(scale, model, 'en', 'nofirewall')
     with col2:
         center_text('Original', 'h4')
-        plotter.plot_histograms(scale, 'pt', 'original')
+        plotter.plot_histograms(scale, model, 'pt', 'original')
         center_text('No firewall', 'h4')
-        plotter.plot_histograms(scale, 'pt', 'nofirewall')
+        plotter.plot_histograms(scale, model,'pt', 'nofirewall')
 
     # Pie graphs
     center_text('Pie Graphs', 'h3')
     col1, col2 = st.columns(2)
     with col1:
         center_text('Original', 'h4')
-        plotter.plot_pieplot(scale, 'en', 'original')
+        plotter.plot_pieplot(scale, model, 'en', 'original')
         center_text('No firewall', 'h4')
-        plotter.plot_pieplot(scale, 'en', 'nofirewall')
+        plotter.plot_pieplot(scale, model, 'en', 'nofirewall')
     with col2:
         center_text('Original', 'h4')
-        plotter.plot_pieplot(scale, 'pt', 'original')
+        plotter.plot_pieplot(scale, model, 'pt', 'original')
         center_text('No firewall', 'h4')
-        plotter.plot_pieplot(scale, 'pt', 'nofirewall')
+        plotter.plot_pieplot(scale, model, 'pt', 'nofirewall')
 
     # Classification Reports
     center_text('Classification Reports', 'h3')
     col1, col2 = st.columns(2)
     with col1:
         center_text('Original', 'h4')
-        plotter.show_classification_report(scale, 'en', 'original')
+        plotter.show_classification_report(scale, model, 'en', 'original')
         center_text('No firewall', 'h4')
-        plotter.show_classification_report(scale, 'en', 'nofirewall')
+        plotter.show_classification_report(scale, model, 'en', 'nofirewall')
     with col2:
         center_text('Original', 'h4')
-        plotter.show_classification_report(scale, 'pt', 'original')
+        plotter.show_classification_report(scale, model, 'pt', 'original')
         center_text('No firewall', 'h4')
-        plotter.show_classification_report(scale, 'pt', 'nofirewall')
+        plotter.show_classification_report(scale, model, 'pt', 'nofirewall')
 
     # Wilcoxon test
     center_text('Wilcoxon test', 'h3')
     col1, col2 = st.columns(2)
     with col1:
         center_text('Original', 'h4')
-        plotter.show_wilcoxon_test(scale, 'en', 'original')
+        plotter.show_wilcoxon_test(scale, model, 'en', 'original')
         center_text('No firewall', 'h4')
-        plotter.show_wilcoxon_test(scale, 'en', 'nofirewall')
+        plotter.show_wilcoxon_test(scale, model, 'en', 'nofirewall')
     with col2:
         center_text('Original', 'h4')
-        plotter.show_wilcoxon_test(scale, 'pt', 'original')
+        plotter.show_wilcoxon_test(scale, model, 'pt', 'original')
         center_text('No firewall', 'h4')
-        plotter.show_wilcoxon_test(scale, 'pt', 'nofirewall')
+        plotter.show_wilcoxon_test(scale, model, 'pt', 'nofirewall')
 
 
 ##############################################################################################
 # SENTIMENT ANALYSIS
 ##############################################################################################
-elif option == "Sentiment Analysis":
-    st.title("Sentiment Analysis")
+# elif option == "Sentiment Analysis":
+#     st.title("Sentiment Analysis")
 
-    bias_analysis.aggregate_differences(tipo='sentiment')
-    # Para plotar heatmap das diferenças de gênero
-    bias_analysis.plot_heatmap('diff_pol_mas', 'sentiment')
-    bias_analysis.plot_heatmap('diff_pol_fem', 'sentiment')
-    bias_analysis.plot_heatmap('diff_pol_neu', 'sentiment')
+#     bias_analysis.aggregate_differences(tipo='sentiment')
+#     # Para plotar heatmap das diferenças de gênero
+#     bias_analysis.plot_heatmap('diff_pol_mas', 'sentiment')
+#     bias_analysis.plot_heatmap('diff_pol_fem', 'sentiment')
+#     bias_analysis.plot_heatmap('diff_pol_neu', 'sentiment')
 
 
 ##############################################################################################
@@ -179,16 +181,16 @@ elif option == "Gender Bias Analysis":
     # bias_analysis.plot_heatmap('diff_mas_fem')
     # bias_analysis.plot_heatmap('diff_mas_neu')
     # bias_analysis.plot_heatmap('diff_fem_neu')
-    bias_analysis.plot_heatmap('perc_change_mas_fem')
-    bias_analysis.plot_heatmap('perc_change_mas_neu')
-    bias_analysis.plot_heatmap('perc_change_fem_neu')
+    bias_analysis.plot_heatmap_bias('perc_change_mas_fem')
+    bias_analysis.plot_heatmap_bias('perc_change_mas_neu')
+    bias_analysis.plot_heatmap_bias('perc_change_fem_neu')
     st.title('')
 
-    bias_analysis.plot_heatmap_by_scale('1-5')
+    # bias_analysis.plot_heatmap_by_scale('1-5')
     st.title('')
     # bias_analysis.plot_heatmap_compacted_scale('1-3')
-    center_text('1-5')
-    bias_analysis.plot_heatmap_compacted_scale('1-5')
+    # center_text('1-5')
+    # bias_analysis.plot_heatmap_compacted_scale('1-5')
     # bias_analysis.plot_heatmap_compacted_scale('1-7')
 
     
@@ -206,7 +208,7 @@ elif option == "Firewall Analysis":
     bias_analysis.plot_firewall_heatmap('perc_change_neutro')
     # bias_analysis.plot_firewall_heatmap_scale('1-3')
     center_text('1-5')
-    bias_analysis.plot_firewall_heatmap_scale('1-5')
+    # bias_analysis.plot_firewall_heatmap_scale('1-5')
     # bias_analysis.plot_firewall_heatmap_scale('1-7')
 
 ##############################################################################################
@@ -229,5 +231,5 @@ elif option == "Language Analysis":
 
     # bias_analysis.plot_language_heatmap_scale('1-3')
     center_text('1-5')
-    bias_analysis.plot_language_heatmap_scale('1-5')
+    # bias_analysis.plot_language_heatmap_scale('1-5')
     # bias_analysis.plot_language_heatmap_scale('1-7')

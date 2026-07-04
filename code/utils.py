@@ -23,9 +23,11 @@ class DataLoader:
         self.df = pd.read_csv(self.filepath)
         return self.df
 
-    def filter_data(self, scale, language=None, prompt=None, gender=None):
+    def filter_data(self, scale, model=None, language=None, prompt=None, gender=None):
         df_filtered = self.df[self.df['escala'] == scale]
-
+        
+        if model:
+            df_filtered = df_filtered[df_filtered['modelo'] == model]
         if language:
             df_filtered = df_filtered[df_filtered['idioma'] == language]
 
@@ -64,20 +66,28 @@ class DataOverview(BasePlot):
         self.data_loader = data_loader
         self.df = data_loader.load_data()
 
-    def boxplot_pol(self, width=400):
-        fig, ax = plt.subplots()
+    def boxplot_pol(self, model=None, width=400):
+        df_plot = self.df
+        if model is not None: 
+            df_plot = df_plot[df_plot['modelo'] == model]
         sns.boxplot(data=self.df['polaridade'], ax=ax)
         self.plot_fig(fig, width)
 
-    def histogram_pol(self, width=400):
+    def histogram_pol(self, model=None, width=400):
+        df_plot = self.df
+        if model is not None: 
+            df_plot = df_plot[df_plot['modelo'] == model]
         fig, ax = plt.subplots()
-        ax.hist(self.df['polaridade'], label="Polarity")
+        ax.hist(df_plot['polaridade'], label="Polarity")
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
         self.plot_fig(fig, width)
 
-    def pieplot_pol(self, width=400):
+    def pieplot_pol(self, model=None, width=400):
+        df_plot = self.df
+        if model is not None: 
+            df_plot = df_plot[df_plot['modelo'] == model]
         fig, ax = plt.subplots()
-        counts = self.df['polaridade'].value_counts().sort_index()
+        counts = df_plot['polaridade'].value_counts().sort_index()
         counts.plot.pie(ax=ax, autopct='%1.1f%%', startangle=90, title='Polarity', fontsize=12)
         self.plot_fig(fig, width)
 
@@ -87,14 +97,14 @@ class Plotter(BasePlot):
         self.data_loader = data_loader
         self.columns_results = ['resultado masculino', 'resultado feminino', 'resultado neutro']
 
-    def plot_boxplots(self, scale, language, prompt, width=500):
-        filtered_df = self.data_loader.filter_data(scale, language, prompt)
+    def plot_boxplots(self, scale, model, language, prompt, width=500):
+        filtered_df = self.data_loader.filter_data(scale, model, language, prompt)
         fig, ax = plt.subplots()
         sns.boxplot(data=filtered_df[self.columns_results], ax=ax)
         self.plot_fig(fig, width)
 
-    def plot_histograms(self, scale, language, prompt, width=500):
-        filtered_df = self.data_loader.filter_data(scale, language, prompt)
+    def plot_histograms(self, scale, model, language, prompt, width=500):
+        filtered_df = self.data_loader.filter_data(scale, model, language, prompt)
         fig, ax = plt.subplots()
         data = [filtered_df[column] for column in self.columns_results]
         ax.hist(data, label=self.columns_results)
@@ -113,8 +123,8 @@ class Plotter(BasePlot):
         with col3:
             st.write(counts[2])
 
-    def plot_pieplot(self, scale, language, prompt, width=800):
-        filtered_df = self.data_loader.filter_data(scale, language, prompt)
+    def plot_pieplot(self, scale, model, language, prompt, width=800):
+        filtered_df = self.data_loader.filter_data(scale, model, language, prompt)
         counts = [filtered_df[column].value_counts().sort_index() for column in self.columns_results]
         self.show_value_counts(counts)
 
@@ -136,8 +146,8 @@ class Plotter(BasePlot):
             df_aux[column] = df_aux[column].map(mapping.get(scale, {}))
         return df_aux
 
-    def show_classification_report(self, scale, language, prompt):
-        filtered_df = self.data_loader.filter_data(scale, language, prompt)
+    def show_classification_report(self, scale, model, language, prompt):
+        filtered_df = self.data_loader.filter_data(scale, model, language, prompt)
         filtered_df = self.map_results_values(filtered_df, scale)
         for column in self.columns_results:
             center_text(column, 'h5')
@@ -145,8 +155,9 @@ class Plotter(BasePlot):
             df_report = pd.DataFrame(report).transpose()
             st.dataframe(df_report)
 
-    def show_wilcoxon_test(self, scale, language, prompt):
-        filtered_df = self.data_loader.filter_data(scale, language, prompt)
+
+    def show_wilcoxon_test(self, scale, model, language, prompt):
+        filtered_df = self.data_loader.filter_data(scale, model, language, prompt)
         pairs = [('resultado masculino', 'resultado feminino'), ('resultado masculino', 'resultado neutro'), ('resultado feminino', 'resultado neutro')]
         results = [(wilcoxon(filtered_df[pair[0]], filtered_df[pair[1]])) for pair in pairs]
         w_stats = [result[0] for result in results]
@@ -191,29 +202,33 @@ class BiasAnalysis(BasePlot):
 
         return df
 
-    def aggregate_differences(self, tipo='gender', show=True):
+    def aggregate_differences(self, tipo=None, model=None, show=True):
         df = self.data_loader.load_data()
+        if model is not None:
+            df = df[df['modelo'] == model]
         df_differences = self.calculate_differences(df, tipo)
         if tipo == 'gender':
-            aggregated = df_differences.groupby(['escala', 'idioma', 'prompt'])[['diff_mas_fem', 'diff_mas_neu', 'diff_fem_neu']].mean().reset_index()
+            aggregated = df_differences.groupby(['escala', 'idioma', 'prompt', 'modelo'])[['diff_mas_fem', 'diff_mas_neu', 'diff_fem_neu']].mean().reset_index()
         elif tipo == 'sentiment':
-            aggregated = df_differences.groupby(['escala', 'idioma', 'prompt'])[['diff_pol_mas', 'diff_pol_fem', 'diff_pol_neu']].mean().reset_index()
+            aggregated = df_differences.groupby(['escala', 'idioma', 'prompt', 'modelo'])[['diff_pol_mas', 'diff_pol_fem', 'diff_pol_neu']].mean().reset_index()
         if show:
             st.dataframe(aggregated)
         else:
             return aggregated
         
-    def aggregate_percentage_changes(self, tipo='gender', show=True):
+    def aggregate_percentage_changes(self, tipo='gender', model=None, show=True):
         df = self.data_loader.load_data()
 
         for scale in ['1-3', '1-5', '1-7']:
             for column in self.columns_results:
                 df = self.normalize_sentiments(df, column, scale)
         df = self.normalize_sentiments(df, 'polaridade', '1-3')
+        if model is not None: 
+            df = df[df['modelo'] == model]
 
         if tipo == 'gender':
             # Calcula as médias para cada grupo
-            aggregated_means = df.groupby(['escala', 'idioma', 'prompt'])[['resultado masculino', 'resultado feminino', 'resultado neutro']].mean().reset_index()
+            aggregated_means = df.groupby(['escala', 'idioma', 'prompt', 'modelo'])[['resultado masculino', 'resultado feminino', 'resultado neutro']].mean().reset_index()
 
             # Calcula as porcentagens de mudança a partir das médias
             aggregated_means['perc_change_mas_fem'] = ((aggregated_means['resultado feminino'] - aggregated_means['resultado masculino']) / aggregated_means['resultado masculino'] * 100)
@@ -271,7 +286,7 @@ class BiasAnalysis(BasePlot):
         else:
             return aggregated
         
-    def aggregate_language_percentage_changes(self, show=True):
+    def aggregate_language_percentage_changes(self, model=None, show=True):
         df = self.data_loader.load_data()
 
         # Normaliza os sentimentos
@@ -279,13 +294,16 @@ class BiasAnalysis(BasePlot):
             for column in ['resultado masculino', 'resultado feminino', 'resultado neutro']:
                 df = self.normalize_sentiments(df, column, scale)
         df = self.normalize_sentiments(df, 'polaridade', '1-3')
+        
+        if model is not None: 
+            df = df[df['modelo'] == model]
 
         # Calcula as médias para cada grupo (idioma, escala, prompt)
-        aggregated_en = df[df['idioma'] == 'en'].groupby(['escala', 'prompt'])[['resultado masculino', 'resultado feminino', 'resultado neutro']].mean().reset_index()
-        aggregated_pt = df[df['idioma'] == 'pt'].groupby(['escala', 'prompt'])[['resultado masculino', 'resultado feminino', 'resultado neutro']].mean().reset_index()
+        aggregated_en = df[df['idioma'] == 'en'].groupby(['escala', 'prompt', 'modelo'])[['resultado masculino', 'resultado feminino', 'resultado neutro']].mean().reset_index()
+        aggregated_pt = df[df['idioma'] == 'pt'].groupby(['escala', 'prompt', 'modelo'])[['resultado masculino', 'resultado feminino', 'resultado neutro']].mean().reset_index()
 
         # Une as tabelas de inglês e português
-        aggregated = pd.merge(aggregated_en, aggregated_pt, on=['escala', 'prompt'], suffixes=('_en', '_pt'))
+        aggregated = pd.merge(aggregated_en, aggregated_pt, on=['escala', 'prompt', 'modelo'], suffixes=('_en', '_pt'))
 
         # Calcula as variações percentuais
         for col in ['resultado masculino', 'resultado feminino', 'resultado neutro']:
@@ -299,7 +317,7 @@ class BiasAnalysis(BasePlot):
         else:
             return aggregated
         
-    def aggregate_firewall_percentage_changes(self, show=True):
+    def aggregate_firewall_percentage_changes(self, model=None, show=True):
         df = self.data_loader.load_data()
 
         # Normaliza os sentimentos
@@ -307,13 +325,16 @@ class BiasAnalysis(BasePlot):
             for column in ['resultado masculino', 'resultado feminino', 'resultado neutro']:
                 df = self.normalize_sentiments(df, column, scale)
         df = self.normalize_sentiments(df, 'polaridade', '1-3')
+        
+        if model is not None: 
+            df = df[df['modelo'] == model]
 
         # Calcula as médias para cada grupo (idioma, escala, prompt)
-        aggregated_original = df[df['prompt'] == 'original'].groupby(['escala', 'idioma'])[['resultado masculino', 'resultado feminino', 'resultado neutro']].mean().reset_index()
-        aggregated_nofirewall = df[df['prompt'] == 'nofirewall'].groupby(['escala', 'idioma'])[['resultado masculino', 'resultado feminino', 'resultado neutro']].mean().reset_index()
+        aggregated_original = df[df['prompt'] == 'original'].groupby(['escala', 'idioma', 'modelo'])[['resultado masculino', 'resultado feminino', 'resultado neutro']].mean().reset_index()
+        aggregated_nofirewall = df[df['prompt'] == 'nofirewall'].groupby(['escala', 'idioma', 'modelo'])[['resultado masculino', 'resultado feminino', 'resultado neutro']].mean().reset_index()
 
         # Une as tabelas de inglês e português
-        aggregated = pd.merge(aggregated_original, aggregated_nofirewall, on=['escala', 'idioma'], suffixes=('_original', '_nofirewall'))
+        aggregated = pd.merge(aggregated_original, aggregated_nofirewall, on=['escala', 'idioma', 'modelo'], suffixes=('_original', '_nofirewall'))
 
         # Calcula as variações percentuais
         for col in ['resultado masculino', 'resultado feminino', 'resultado neutro']:
@@ -363,28 +384,36 @@ class BiasAnalysis(BasePlot):
         else:
             return aggregated
 
-    def plot_heatmap(self, column, tipo='gender', width=600):
-        # df = self.aggregate_differences(tipo, show=False)
-        df = self.aggregate_percentage_changes(tipo, show=False)
-        df_pivot = df.pivot_table(values=column, index='escala', columns=['idioma', 'prompt'], aggfunc='mean')
+    def plot_heatmap_bias(self, column, tipo='gender', model=None, width=600):
+        df = self.aggregate_percentage_changes(tipo, model=model, show=False)
+        df_pivot = df.pivot_table(values=column, index='modelo', columns=['idioma', 'prompt'], aggfunc='mean')
+        fig, ax = plt.subplots()
+        sns.heatmap(df_pivot, annot=True, cmap="coolwarm", center=0, ax=ax)
+        ax.set_title(f'Diferença Média {column}')
+        self.plot_fig(fig, width)
+        
+    def plot_heatmap_sentiment(self, column, tipo='sentiment', model=None, width=600):
+        df = self.aggregate_differences(tipo, model=model, show=False)
+        df_pivot = df.pivot_table(values=column, index='modelo', columns=['idioma', 'prompt'], aggfunc='mean')
         fig, ax = plt.subplots()
         sns.heatmap(df_pivot, annot=True, cmap="coolwarm", center=0, ax=ax)
         ax.set_title(f'Diferença Média {column}')
         self.plot_fig(fig, width)
 
-    def plot_language_heatmap(self, column, width=600):
+    def plot_language_heatmap(self, column, model=None, width=600):
         # df = self.aggregate_language_differences(show=False)
-        df = self.aggregate_language_percentage_changes(show=False)
-        df_pivot = df.pivot_table(values=column, index='escala', columns='prompt', aggfunc='mean')
-        fig, ax = plt.subplots()
+        df = self.aggregate_language_percentage_changes(model=model, show=False)
+        df['comparacao'] = (df['modelo_en'] + ' → ' + df['modelo_pt'])
+        df_pivot = df.pivot_table(values=column, index='comparacao', columns='prompt', aggfunc='mean')
+        fig, ax = plt.subplots(figsize=(12,6))
         sns.heatmap(df_pivot, annot=True, cmap="coolwarm", center=0, ax=ax)
         ax.set_title(f'Diferença Média {column} entre Inglês e Português')
         self.plot_fig(fig, width)
 
-    def plot_firewall_heatmap(self, column, width=600):
+    def plot_firewall_heatmap(self, column, model=None, width=600):
         # df = self.aggregate_firewall_differences(show=False)
-        df = self.aggregate_firewall_percentage_changes(show=False)
-        df_pivot = df.pivot_table(values=column, index='escala', columns='idioma', aggfunc='mean')
+        df = self.aggregate_firewall_percentage_changes(model=model, show=False)
+        df_pivot = df.pivot_table(values=column, index='modelo', columns='idioma', aggfunc='mean')
         fig, ax = plt.subplots()
         sns.heatmap(df_pivot, annot=True, cmap="coolwarm", center=0, ax=ax)
         ax.set_title(f'Diferença Média {column} entre Original e No Firewall')
