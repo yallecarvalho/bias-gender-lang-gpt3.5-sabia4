@@ -310,7 +310,7 @@ class BiasAnalysis(BasePlot):
             en_col = f'{col}_en'
             pt_col = f'{col}_pt'
             perc_change_col = f'perc_change_{col.split()[-1]}'
-            aggregated[perc_change_col] = ((aggregated[pt_col] - aggregated[en_col]) / ((aggregated[en_col] + aggregated[pt_col]) / 2) * 100)
+            aggregated[perc_change_col] = (((aggregated[pt_col] - aggregated[en_col]) / aggregated[en_col])  * 100)
 
         if show:
             st.dataframe(aggregated)
@@ -341,7 +341,7 @@ class BiasAnalysis(BasePlot):
             en_col = f'{col}_original'
             pt_col = f'{col}_nofirewall'
             perc_change_col = f'perc_change_{col.split()[-1]}'
-            aggregated[perc_change_col] = ((aggregated[pt_col] - aggregated[en_col]) / ((aggregated[en_col] + aggregated[pt_col]) / 2) * 100)
+            aggregated[perc_change_col] = (((aggregated[pt_col] - aggregated[en_col]) / aggregated[en_col])  * 100)
 
         if show:
             st.dataframe(aggregated)
